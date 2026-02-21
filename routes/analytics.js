@@ -9,7 +9,6 @@ const ALLOWED_PERIODS = new Set(['TODAY', 'LAST_7_DAYS', 'LAST_30_DAYS', 'LAST_9
 const METRICS = [
   'CLICK_THROUGH_RATE',
   'LISTING_IMPRESSION_TOTAL',
-  'LISTING_IMPRESSION_SEARCH_RESULTS_PAGE',
   'LISTING_VIEWS_TOTAL',
   'TRANSACTION',
 ].join(',');
@@ -72,10 +71,19 @@ router.post('/traffic', async (req, res, next) => {
     });
 
   } catch (error) {
-    console.error('Analytics API error:', error.response?.data || error.message);
+    const ebayStatus = error.response?.status;
+    const ebayData = error.response?.data;
+    console.error('Analytics API error status:', ebayStatus);
+    console.error('Analytics API error body:', JSON.stringify(ebayData, null, 2));
+    console.error('Analytics API error message:', error.message);
     next({
-      status: error.response?.status || 500,
-      message: error.response?.data?.errors?.[0]?.message || error.message || 'Analytics API call failed',
+      status: ebayStatus || 500,
+      message:
+        ebayData?.errors?.[0]?.longMessage ||
+        ebayData?.errors?.[0]?.message ||
+        ebayData?.message ||
+        error.message ||
+        'Analytics API call failed',
     });
   }
 });
@@ -109,7 +117,6 @@ function normalizeTrafficReport(data) {
       title,
       // Traffic metrics — default to 0 if not present
       totalImpressions: 0,
-      searchImpressions: 0,
       totalPageViews: 0,
       ctr: 0,
       quantitySold: 0,
@@ -130,9 +137,6 @@ function normalizeTrafficReport(data) {
           break;
         case 'CLICK_THROUGH_RATE':
           listing.ctr = parseFloat((num * 100).toFixed(2)); // convert decimal to percentage
-          break;
-        case 'LISTING_IMPRESSION_SEARCH_RESULTS_PAGE':
-          listing.searchImpressions = Math.round(num);
           break;
         case 'TRANSACTION':
           listing.quantitySold = Math.round(num);
