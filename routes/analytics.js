@@ -9,8 +9,8 @@ const ALLOWED_PERIODS = new Set(['TODAY', 'LAST_7_DAYS', 'LAST_30_DAYS', 'LAST_9
 const METRICS = [
   'CLICK_THROUGH_RATE',
   'LISTING_IMPRESSION_TOTAL',
+  'LISTING_IMPRESSION_SEARCH_RESULTS_PAGE',
   'LISTING_VIEWS_TOTAL',
-  'TOP_20_SEARCH_SLOT_IMPRESSION_RATE',
   'TRANSACTION',
 ].join(',');
 
@@ -109,10 +109,11 @@ function normalizeTrafficReport(data) {
       title,
       // Traffic metrics — default to 0 if not present
       totalImpressions: 0,
+      searchImpressions: 0,
       totalPageViews: 0,
       ctr: 0,
       quantitySold: 0,
-      top20Pct: 0,
+      top20Pct: 0, // not available from Analytics API — kept for shape compatibility, always 0
     };
 
     // Map metric values by index to named fields
@@ -130,8 +131,8 @@ function normalizeTrafficReport(data) {
         case 'CLICK_THROUGH_RATE':
           listing.ctr = parseFloat((num * 100).toFixed(2)); // convert decimal to percentage
           break;
-        case 'TOP_20_SEARCH_SLOT_IMPRESSION_RATE':
-          listing.top20Pct = parseFloat((num * 100).toFixed(2));
+        case 'LISTING_IMPRESSION_SEARCH_RESULTS_PAGE':
+          listing.searchImpressions = Math.round(num);
           break;
         case 'TRANSACTION':
           listing.quantitySold = Math.round(num);
