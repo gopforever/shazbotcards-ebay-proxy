@@ -116,6 +116,74 @@ POST /auth/refresh
 }
 ```
 
+### Trading API Sync
+```
+POST /trading/sync
+```
+
+Proxies an eBay **Trading API** call server-to-server, solving the CORS/CSP issues that arise when the browser tries to call `https://api.ebay.com/ws/api.dll` directly.
+
+Authentication uses the OAuth user access token via the `X-EBAY-API-IAF-TOKEN` header (no `RequesterCredentials` needed in the XML body).
+
+**Headers:**
+```
+Authorization: Bearer <access_token>
+Content-Type: application/json
+```
+
+**Body (all fields optional):**
+```json
+{
+  "callName": "GetMyeBaySelling",
+  "environment": "production",
+  "pageNumber": 1,
+  "body": {}
+}
+```
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `callName` | string | `GetMyeBaySelling` | Trading API call to make. Allowed: `GetMyeBaySelling`, `GetMyeBayBuying`, `GetSellerList`, `GetItem`, `GetOrders` |
+| `environment` | string | `production` | `production` or `sandbox` |
+| `pageNumber` | number | `1` | Shorthand to paginate ActiveList/SoldList/UnsoldList when using the default body |
+| `body` | object | *(see below)* | Override the entire Trading API request body (merged as XML child elements) |
+
+When `callName` is `GetMyeBaySelling` and no `body` is provided, the proxy sends sensible defaults that retrieve **active**, **sold**, and **unsold** listings (200 items per section per page):
+
+```json
+{
+  "ActiveList": { "Include": true, "Pagination": { "EntriesPerPage": 200, "PageNumber": 1 } },
+  "SoldList":   { "Include": true, "Pagination": { "EntriesPerPage": 200, "PageNumber": 1 } },
+  "UnsoldList": { "Include": true, "Pagination": { "EntriesPerPage": 200, "PageNumber": 1 } }
+}
+```
+
+**Success response (200):** Parsed JSON representation of the eBay Trading API XML response.
+
+**Error response:**
+```json
+{
+  "error": "Human-readable error message",
+  "ebayErrors": [ { "SeverityCode": "Error", "ErrorCode": "21917053", "ShortMessage": "...", "LongMessage": "..." } ]
+}
+```
+
+**Example (fetch all selling listings):**
+```bash
+curl -X POST https://shazbotcards-ebay-proxy.vercel.app/trading/sync \
+  -H "Authorization: Bearer <your_access_token>" \
+  -H "Content-Type: application/json" \
+  -d '{"callName":"GetMyeBaySelling"}'
+```
+
+**Example (paginate to page 2):**
+```bash
+curl -X POST https://shazbotcards-ebay-proxy.vercel.app/trading/sync \
+  -H "Authorization: Bearer <your_access_token>" \
+  -H "Content-Type: application/json" \
+  -d '{"callName":"GetMyeBaySelling","pageNumber":2}'
+```
+
 ### Proxy eBay API
 ```
 POST /api/ebay

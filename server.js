@@ -4,6 +4,7 @@ const corsMiddleware = require('./middleware/cors');
 const rateLimitMiddleware = require('./middleware/rateLimit');
 const authRoutes = require('./routes/auth');
 const ebayRoutes = require('./routes/ebay');
+const tradingRoutes = require('./routes/trading');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -25,6 +26,7 @@ app.get('/health', (req, res) => {
 // Routes
 app.use('/auth', authRoutes);
 app.use('/api', ebayRoutes);
+app.use('/trading', tradingRoutes);
 
 // Error handler
 app.use((err, _req, res, _next) => {
