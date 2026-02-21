@@ -29,7 +29,8 @@ Set these in Vercel dashboard (Settings → Environment Variables):
 | `EBAY_DEV_ID` | Your eBay Developer ID | `xxxxxxxx-xxxx-xxxx...` |
 | `EBAY_CERT_ID` | Your eBay Certificate ID | `PRD-xxxxxx...` |
 | `EBAY_RU_NAME` | Your eBay Redirect URI Name | `Your_Name-YourApp-...` |
-| `FRONTEND_URL` | Your frontend URL | `https://gopforever.github.io` |
+| `FRONTEND_URL` | Single frontend URL (backwards-compat, merged into allowlist) | `https://projectebay.netlify.app` |
+| `ALLOWED_ORIGINS` | Comma-separated extra allowed origins (optional) | `https://my-site.com,https://staging.netlify.app` |
 
 ## 🚢 Deployment to Vercel
 
@@ -143,7 +144,43 @@ Content-Type: application/json
 }
 ```
 
-## 🧪 Local Development
+## 🌐 CORS Configuration
+
+The proxy uses an origin allowlist. The following origins are **always** permitted by default:
+
+| Origin | Purpose |
+|--------|---------|
+| `https://projectebay.netlify.app` | Production Netlify frontend |
+| `http://localhost:3000` | Local dev (Node server) |
+| `http://localhost:8888` | Local dev (Netlify CLI) |
+
+**Adding extra origins** – set the `ALLOWED_ORIGINS` env var (comma-separated):
+
+```
+ALLOWED_ORIGINS=https://my-other-site.com,https://staging.netlify.app
+```
+
+The value of `FRONTEND_URL` (if set) is also merged into the allowlist for backwards-compatibility.
+
+All endpoints handle `OPTIONS` preflight requests automatically via the `cors` middleware. A successful preflight returns `200` with the appropriate `Access-Control-Allow-*` headers.
+
+### Verifying CORS locally
+
+```bash
+# Preflight (should return 200 with Access-Control-Allow-Origin header)
+curl -i -X OPTIONS http://localhost:3000/auth/token \
+  -H "Origin: https://projectebay.netlify.app" \
+  -H "Access-Control-Request-Method: POST" \
+  -H "Access-Control-Request-Headers: Content-Type"
+
+# Actual POST (should include Access-Control-Allow-Origin in response)
+curl -i -X POST http://localhost:3000/auth/token \
+  -H "Origin: https://projectebay.netlify.app" \
+  -H "Content-Type: application/json" \
+  -d '{"code":"test"}'
+```
+
+
 
 ```bash
 # Install dependencies
@@ -189,8 +226,9 @@ eBay API (api.ebay.com)
 ## 🐛 Troubleshooting
 
 ### CORS Errors
-- Verify `FRONTEND_URL` matches your frontend domain exactly
-- Check Vercel deployment logs for errors
+- Ensure the frontend origin is in the allowlist (see [CORS Configuration](#-cors-configuration)).
+- To allow additional origins, set the `ALLOWED_ORIGINS` env var (comma-separated) in the Vercel dashboard.
+- Check Vercel deployment logs for errors.
 
 ### OAuth Errors
 - Verify all eBay credentials are correct
