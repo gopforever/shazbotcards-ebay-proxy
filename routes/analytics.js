@@ -41,10 +41,15 @@ router.post('/traffic', async (req, res, next) => {
       ? 'https://api.sandbox.ebay.com'
       : 'https://api.ebay.com';
 
+    // eBay Analytics API requires filter= syntax with curly-brace encoded values
+    // date_range must be inside the filter param, not a standalone query param
+    // dimension and metric are separate top-level params
+    const filter = `marketplace_ids:{EBAY_US},date_range:{${period}}`;
+
     const params = new URLSearchParams({
       dimension: 'LISTING',
       metric: METRICS,
-      date_range: period,
+      filter,
     });
 
     const response = await axios.get(
