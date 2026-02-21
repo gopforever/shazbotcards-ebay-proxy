@@ -14,6 +14,49 @@ const METRICS = [
 ].join(',');
 
 /**
+ * Convert a named period to an eBay Analytics API date range string.
+ * eBay requires explicit dates in [yyyymmdd..yyyymmdd] format.
+ *
+ * @param {string} period  One of: TODAY, LAST_7_DAYS, LAST_30_DAYS, LAST_90_DAYS
+ * @returns {string}  Date range in eBay format e.g. "[20240201..20240221]"
+ */
+function periodToDateRange(period) {
+  const end = new Date();
+
+  // Format a Date as yyyymmdd
+  const fmt = d => {
+    const y = d.getUTCFullYear();
+    const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(d.getUTCDate()).padStart(2, '0');
+    return `${y}${m}${day}`;
+  };
+
+  let start;
+  switch (period) {
+    case 'TODAY':
+      start = new Date(end);
+      break;
+    case 'LAST_7_DAYS':
+      start = new Date(end);
+      start.setUTCDate(start.getUTCDate() - 6);
+      break;
+    case 'LAST_30_DAYS':
+      start = new Date(end);
+      start.setUTCDate(start.getUTCDate() - 29);
+      break;
+    case 'LAST_90_DAYS':
+      start = new Date(end);
+      start.setUTCDate(start.getUTCDate() - 89);
+      break;
+    default:
+      start = new Date(end);
+      start.setUTCDate(start.getUTCDate() - 6);
+  }
+
+  return `[${fmt(start)}..${fmt(end)}]`;
+}
+
+/**
  * POST /analytics/traffic
  * Fetch per-listing traffic data from the eBay Analytics API.
  *
@@ -41,10 +84,12 @@ router.post('/traffic', async (req, res, next) => {
       ? 'https://api.sandbox.ebay.com'
       : 'https://api.ebay.com';
 
-    // eBay Analytics API requires filter= syntax with curly-brace encoded values
-    // date_range must be inside the filter param, not a standalone query param
-    // dimension and metric are separate top-level params
-    const filter = `marketplace_ids:{EBAY_US},date_range:{${period}}`;
+    // eBay Analytics API requires filter= syntax:
+    // - marketplace_ids uses curly braces: {EBAY_US}
+    // - date_range uses square brackets with explicit dates: [yyyymmdd..yyyymmdd]
+    // Named periods like LAST_7_DAYS are NOT supported — must use real dates
+    const dateRange = periodToDateRange(period);
+    const filter = `marketplace_ids:{EBAY_US},date_range:${dateRange}`;
 
     const params = new URLSearchParams({
       dimension: 'LISTING',
