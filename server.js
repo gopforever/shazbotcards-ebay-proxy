@@ -10,6 +10,10 @@ const analyticsRouter = require('./routes/analytics');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Trust Vercel's reverse proxy — required for express-rate-limit to work correctly on Vercel
+// Without this, express-rate-limit throws a ValidationError on every request
+app.set('trust proxy', 1);
+
 // Middleware
 app.use(express.json());
 app.use(corsMiddleware);

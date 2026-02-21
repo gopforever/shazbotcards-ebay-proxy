@@ -6,7 +6,10 @@ const limiter = rateLimit({
   max: 100,
   message: { error: 'Too many requests, please try again later' },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  // Suppresses the express-rate-limit ValidationError warning when trust proxy is
+  // already configured via app.set('trust proxy', 1) in server.js
+  validate: { trustProxy: false },
 });
 
 module.exports = limiter;
