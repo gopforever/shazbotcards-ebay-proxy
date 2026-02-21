@@ -8,7 +8,6 @@ const ALLOWED_PERIODS = new Set(['TODAY', 'LAST_7_DAYS', 'LAST_30_DAYS', 'LAST_9
 // Metrics to fetch from the eBay Analytics traffic report
 const METRICS = [
   'CLICK_THROUGH_RATE',
-  'IMPRESSION_OR_PAGE_VIEW',
   'LISTING_IMPRESSION_TOTAL',
   'LISTING_VIEWS_TOTAL',
   'TOP_20_SEARCH_SLOT_IMPRESSION_RATE',
@@ -117,7 +116,6 @@ function normalizeTrafficReport(data) {
     };
 
     // Map metric values by index to named fields
-    let hasListingViewsTotal = false;
     metricKeys.forEach((metricKey, idx) => {
       const value = metricValues[idx] ?? 0;
       const num = parseFloat(value) || 0;
@@ -128,13 +126,6 @@ function normalizeTrafficReport(data) {
           break;
         case 'LISTING_VIEWS_TOTAL':
           listing.totalPageViews = Math.round(num);
-          hasListingViewsTotal = true;
-          break;
-        case 'IMPRESSION_OR_PAGE_VIEW':
-          // Fall back to IMPRESSION_OR_PAGE_VIEW only if LISTING_VIEWS_TOTAL was not encountered
-          if (!hasListingViewsTotal) {
-            listing.totalPageViews = Math.round(num);
-          }
           break;
         case 'CLICK_THROUGH_RATE':
           listing.ctr = parseFloat((num * 100).toFixed(2)); // convert decimal to percentage
