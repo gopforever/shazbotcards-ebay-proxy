@@ -42,16 +42,17 @@ router.post('/token', async (req, res, next) => {
     let username = null;
     try {
       const userResponse = await axios.get(
-        'https://api.ebay.com/commerce/identity/v1/user',
+        'https://apiz.ebay.com/commerce/identity/v1/user',
         {
           headers: {
-            'Authorization': `Bearer ${response.data.access_token}`
+            'Authorization': `Bearer ${response.data.access_token}`,
+            'Content-Type': 'application/json',
           }
         }
       );
-      username = userResponse.data.username;
+      username = userResponse.data.username || userResponse.data.userId;
     } catch (userErr) {
-      console.warn('Could not fetch user info:', userErr.message);
+      console.warn('Could not fetch user info (non-fatal):', userErr.response?.status, userErr.message);
     }
 
     res.json({
@@ -104,12 +105,12 @@ router.post('/refresh', async (req, res, next) => {
     let username = null;
     try {
       const userResponse = await axios.get(
-        'https://api.ebay.com/commerce/identity/v1/user',
-        { headers: { 'Authorization': `Bearer ${response.data.access_token}` } }
+        'https://apiz.ebay.com/commerce/identity/v1/user',
+        { headers: { 'Authorization': `Bearer ${response.data.access_token}`, 'Content-Type': 'application/json' } }
       );
-      username = userResponse.data.username;
+      username = userResponse.data.username || userResponse.data.userId;
     } catch (userErr) {
-      console.warn('Could not fetch user info on refresh:', userErr.message);
+      console.warn('Could not fetch user info on refresh (non-fatal):', userErr.response?.status, userErr.message);
     }
 
     res.json({
