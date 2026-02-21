@@ -101,10 +101,22 @@ router.post('/refresh', async (req, res, next) => {
       }
     );
 
+    let username = null;
+    try {
+      const userResponse = await axios.get(
+        'https://api.ebay.com/commerce/identity/v1/user',
+        { headers: { 'Authorization': `Bearer ${response.data.access_token}` } }
+      );
+      username = userResponse.data.username;
+    } catch (userErr) {
+      console.warn('Could not fetch user info on refresh:', userErr.message);
+    }
+
     res.json({
       access_token: response.data.access_token,
       expires_in: response.data.expires_in,
-      token_type: response.data.token_type
+      token_type: response.data.token_type,
+      username,
     });
 
   } catch (error) {
